@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+	<meta charset="utf-8">
+	<title>Leaflet Map</title>
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css"/>
+    <style>
+        html { height:100%;}
+    body {
+        height:100%;
+        padding: 0;
+        margin: 0;
+    }
+
+    #map {
+        width: 100%;
+        margin: 0 auto;
+        height: 95%;
+    }
+    </style> 
+</head>
+<body>
+<! -- OUr web map and content will go here -->
+<script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<div id="map" style="width: 1000px; height: 600px">
+	<script>
+		var map = L.map('map', {center: [39.981192, -75.155399], zoom: 10});
+    	L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+    	map.doubleClickZoom.disable();
+    	var myDataPoint = L.marker([40.110871, -75.172055]).addTo(map);
+    	var myDataPoint = L.marker([40.117399, -75.185054]).addTo(map);
+    	var myDataPoint = L.marker([40.092124, -75.137888]).addTo(map);
+    	var myDataPoint = L.marker([40.071242, -75.128540]).addTo(map);
+    	var myDataPoint = L.marker([40.059580, -75.130072]).addTo(map);
+    	var myDataPoint = L.marker([40.059580, -75.130072]).addTo(map);
+    	var myDataPoint = L.marker([40.021793, -75.160155]).addTo(map);
+    	var myDataPoint = L.marker([39.996805, -75.153916]).addTo(map);
+    	var myDataPoint = L.marker([39.980828, -75.149130]).addTo(map);
+    	var myDataPoint = L.marker([39.951726, -75.159592]).addTo(map);
+
+myDataPoint.bindPopup("Fort Washington");
+myDataPoint.bindPopup("Oreland");
+myDataPoint.bindPopup("Glenside");
+myDataPoint.bindPopup("Elkins Park");
+myDataPoint.bindPopup("Melrose Park");
+myDataPoint.bindPopup("Fern Rock");
+myDataPoint.bindPopup("Wayne Junction");
+myDataPoint.bindPopup("North Philadelphia");
+myDataPoint.bindPopup("Temple");
+myDataPoint.bindPopup("Jefferson");
+var myDataLine = L.polyline([[40.110871, -75.172055], 
+				[40.110871, -75.172055],
+				[40.117399, -75.185054],
+				[40.101904, -75.156067],
+				[40.092124, -75.137888],
+				[40.071242, -75.128540],
+				[40.059580, -75.130072],
+				[40.059580, -75.130072],
+				[40.021793, -75.160155],
+				[39.996805, -75.153916],
+				[39.980828, -75.149130],
+				[39.951726, -75.159592]
+				],
+			    {color: 'red', weight: 5}).addTo(map);
+myDataLine.bindPopup("Fort Washington");
+var myArea = L.polygon([[40.134261, -75.270050],
+			 [40.138132, -74.888837],
+			 [39.873212, -74.988837],
+			 [39.859046, -75.377775]
+			 ],
+   			 {color: 'blue', weight: 1}).addTo(map);
+myArea.bindPopup("Philadelphia metro");
+var popup = L.popup();
+function onMapClick(e) {
+    popup
+        .setLatLng(e.latlng)
+        .setContent("You clicked the map at " + e.latlng.toString())
+        .openOn(map);
+        }
+        map.on('click', onMapClick);
+        var neighborhoodsLayer = null;
+
+        function styleFunc(feature) {
+            return {
+                fillColor: setColorFunc(feature.properties.num_bll_5p),
+                fillOpacity: 0.9,
+                weight: 1,
+                opacity: 1,
+                color: '#ffffff',
+                dashArray: '3'
+            };
+}
+$.getJSON("blood_lead.geojson",function(data){
+    neighborhoodsLayer = L.geoJson(data, {
+        style: styleFunc,
+        onEachFeatureFunc: function(feature, layer){
+    layer.on({
+        mouseover: highlightFeature,
+        mouseout: resetHighlight,
+        click: zoomFeature
+    });
+    layer.bindPopup('num_bll_5p: '+feature.properties.perc_5plus);
+}
+
+    }).addTo(map);
+});
+function highlightFeature(e){
+    var layer = e.target;
+
+    layer.setStyle({
+        weight: 5,
+        color: '#667',
+        dashArray: '',
+        fillOpacity: 0.7
+    });
+    // for different web browsers
+    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+        layer.bringToFront();
+    }
+}
+function resetHighlight(e) {
+    neighborhoodsLayer.resetStyle(e.target);
+}  
+function zoomFeature(e){
+    console.log(e.target.getBounds());
+    map.fitBounds(e.target.getBounds().pad(1.5));
+}
+L.control.scale({position: 'bottomleft'}).addTo(map);
+var legend = L.control({position: 'bottomright'});
+
+// Function that runs when legend is added to map
+legend.onAdd = function (map) {
+    // Create Div Element and Populate it with HTML
+    var div = L.DomUtil.create('div', 'legend');            
+    div.innerHTML += '<b>num_bll_5p</b><br />';
+    div.innerHTML += 'by census tract<br />';
+    div.innerHTML += '<br>';
+    div.innerHTML += '<i style="background: #800000"></i><p>15+</p>';
+    div.innerHTML += '<i style="background: #A0522D"></i><p>10-15</p>';
+    div.innerHTML += '<i style="background: #DAA520"></i><p>5-10</p>';
+    div.innerHTML += '<i style="background: #DEB887"></i><p>0-5</p>';
+    div.innerHTML += '<hr>';
+    div.innerHTML += '<i style="background: #BFBCBB"></i><p>No Data</p>';
+    
+    // Return the Legend div containing the HTML content
+    return div;
+};
+
+// Add Legend to Map
+legend.addTo(map);
+function setColorFunc(density){
+    return density > 30 ? '#800000' :
+           density > 20 ? 'cc0000' :
+           density > 10 ? '#ff1a1a' :
+           density > 0 ? '#ffcccc' :
+                         '#4d0000';
+};
+
+	</script>
+</div>
+</body>
+</html>
